@@ -163,5 +163,16 @@ def add_skill(volunteerID):
     db.session.commit()
     return jsonify(skills), 201
 
+@app.route("/api/volunteers/<uuid:volunteerID>/skills/<string:skillID>", methods=["DELETE"])
+def remove_skill(volunteerID, skillID):
+    v = db.get_or_404(Volunteer, volunteerID)
+    skills = v.skills[1:-1].split(',')
+    if skillID in skills:
+        skills = skills[0:skills.index(skillID)] + skills[(skills.index(skillID) + 1):]
+        setattr(v, "skills", skills)
+        db.session.commit()
+        return jsonify(skills), 201
+    return jsonify({"error":"No skill found for voluneteer titled '" + str(skillID) + "'"}), 404
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
