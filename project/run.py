@@ -4,6 +4,7 @@ from sqlalchemy.orm import DeclarativeBase
 import uuid
 from datetime import datetime
 from sqlalchemy_serializer import SerializerMixin
+import json
 
 class Base(DeclarativeBase):
     pass
@@ -35,9 +36,6 @@ class Volunteer(db.Model, SerializerMixin):
     date_joined = db.Column(db.DateTime)
     background_check = db.Column(db.Boolean)
 
-    def as_dict(self):
-        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "OK"})
@@ -48,11 +46,7 @@ def list_volunteers():
     pagination_to = request.args.get("pagination-to")
     filtering = request.args.get("filter-by-skill")
     sorting = request.args.get("sort")
-    volunteers = ""
-    if pagination_from == None:
-        volunteers = Volunteer.query.all()
-    else:
-        volunteers = Volunteer.query(Volunteer.engine.execute("SELECT * FROM volunteers LIMIT " + pagination_from + ", " + pagination_to))
+    volunteers = Volunteer.query.all()
     volunteer_list = [{"volunteer_id":v.volunteer_id, 
                        "first_name":v.first_name, 
                        "last_name":v.last_name, 
@@ -65,6 +59,9 @@ def list_volunteers():
                        "date_joined":v.date_joined, 
                        "background_check":v.background_check}
                       for v in volunteers]
+
+    if pagination_from != None and pagination_to != None:
+        volunteer_list = volunteer_list[int(pagination_from):int(pagination_to)]
 
     def filterRule(entry):
         if filtering in (entry["skills"])[1:-2].split(','): # Converts a JSON array in the format [x, y, z] to a Python array
@@ -88,14 +85,10 @@ def list_volunteers():
 
 @app.route("/api/volunteers", methods=["POST"])
 def new_volunteer():
-    # fetch the json from the request body via flask
     data = request.get_json()
-    # validate the json (check if thngs that supposed to be numbers are numbers, etc.. (optional)
-    # genrate uuid for the primary key
-    uid = uuid.uuid4()
-    # insert the data to the datbase
+    vid = uuid.uuid4()
 
-    newv = Volunteer(volunteer_id=uid,
+    newv = Volunteer(volunteer_id=vid,
                      first_name=data["first_name"],
                      last_name=data["last_name"],
                      email=data["email"],
@@ -103,7 +96,7 @@ def new_volunteer():
                      date_of_birth=datetime.strptime(data["date_of_birth"], "%Y-%m-%d"),
                      address=data["address"],
                      skills=data["skills"],
-                     availability=data["availability"],
+                     availability="\"" + str(data["availability"]) +"\"",
                      date_joined=datetime.now(),
                      background_check=data["background_check"]
                      )
@@ -111,7 +104,43 @@ def new_volunteer():
     db.session.add(newv)
     db.session.commit()
 
-    return jsonify({"message": uid}), 201
+    return jsonify({"UUID": vid}), 201
+
+@app.route("/api/volunteers/<uuid:volunteerID>", methods=["GET"])
+def get_volunteer(volunteerID):
+    v = db.get_or_404(Volunteer, volunteerID)
+    output = {"volunteer_id":v.volunteer_id, 
+                       "first_name":v.first_name, 
+                       "last_name":v.last_name, 
+                       "email":v.email, 
+                       "phone_number":v.phone_number, 
+                       "date_of_birth":v.date_of_birth, 
+                       "address":v.address, 
+                       "skills":v.skills, 
+                       "availability":v.availability, 
+                       "date_joined":v.date_joined, 
+                       "background_check":v.background_check}
+    return jsonify(output)
+
+@app.route("/api/volunteers/<uuid:volunteerID>", methods=["PUT"])
+def mod_volunteer(volunteerID):
+    v = db.get_or_404(Volunteer, volunteerID)
+    data = request.get_json()
+    modv = {"volunteer_id":v.volunteer_id, 
+                       "first_name":data["first_name"], 
+                       "last_name":data["last_name"], 
+                       "email":data["email"], 
+                       "phone_number":data["phone_number"], 
+                       "date_of_birth":data["date_of_birth"], 
+                       "address":data["address"], 
+                       "skills":data["skills"], 
+                       "availability":"\"" + str(data["availability"]) +"\"", 
+                       "background_check":data["background_check"]}
+    for k in list(modv.keys()):
+        setattr(v, k, modv[k])
+    db.session.commit()
+
+    return jsonify(modv), 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
