@@ -22,7 +22,6 @@ public class VolunteerController(Context context) : ControllerBase
     public async Task<IActionResult> GetVolunteer([FromRoute] Guid id)
     {
         var volunteer = await context.Volunteers.FindAsync(id);
-
         if (volunteer is null) return NotFound();
 
         return Ok(volunteer);
@@ -82,6 +81,49 @@ public class VolunteerController(Context context) : ControllerBase
         if (volunteer is null) return NotFound();
 
         context.Volunteers.Remove(volunteer);
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpGet("{id:Guid}/skills")]
+    public async Task<IActionResult> GetSkills([FromRoute] Guid id)
+    {
+        var volunteer = await context.Volunteers.FindAsync(id);
+        if (volunteer is null) return NotFound();
+
+        return Ok(volunteer.Skills.ToList());
+    }
+    
+    [HttpPost("{id:Guid}/skills")]
+    public async Task<IActionResult> AddSkills([FromRoute] Guid id, [FromBody] List<string> skills)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        
+        var volunteer = await context.Volunteers.FindAsync(id);
+        if (volunteer is null) return NotFound();
+
+        var newSkills = volunteer.Skills.ToList();
+        newSkills.AddRange(skills);
+
+        volunteer.Skills = newSkills.ToArray();
+        await context.SaveChangesAsync();
+
+        return NoContent();
+    }
+    
+    [HttpDelete("{id:Guid}/skills")]
+    public async Task<IActionResult> DeleteSkill([FromRoute] Guid id, [FromBody] string skill)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        
+        var volunteer = await context.Volunteers.FindAsync(id);
+        if (volunteer is null) return NotFound();
+        
+        var newSkills = volunteer.Skills.ToList();
+        newSkills.Remove(skill);
+        
+        volunteer.Skills = newSkills.ToArray();
         await context.SaveChangesAsync();
 
         return NoContent();
