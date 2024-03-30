@@ -134,6 +134,7 @@ def mod_volunteer(volunteerID):
                        "availability":"\"" + str(data["availability"]) +"\"", 
                        "background_check":data["background_check"]}
     for k in list(modv.keys()):
+        # set the database entry at the key k to the value at the same key in the modified entry
         setattr(v, k, modv[k])
     db.session.commit()
     return jsonify(modv), 201
@@ -149,6 +150,17 @@ def del_volunteer(volunteerID):
 def get_skills(volunteerID):
     v = db.get_or_404(Volunteer, volunteerID)
     skills = v.skills[1:-1].split(',')
+    return jsonify(skills), 201
+
+@app.route("/api/volunteers/<uuid:volunteerID>/skills", methods=["POST"])
+def add_skill(volunteerID):
+    v = db.get_or_404(Volunteer, volunteerID)
+    data = request.get_json()
+    skills = v.skills[1:-1].split(',')
+    for s in data:
+        skills += [s]
+    setattr(v, "skills", skills)
+    db.session.commit()
     return jsonify(skills), 201
 
 if __name__ == '__main__':
