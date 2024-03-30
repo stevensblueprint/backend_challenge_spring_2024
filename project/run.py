@@ -139,8 +139,14 @@ def mod_volunteer(volunteerID):
     for k in list(modv.keys()):
         setattr(v, k, modv[k])
     db.session.commit()
-
     return jsonify(modv), 201
+
+@app.route("/api/volunteers/<uuid:volunteerID>", methods=["DELETE"])
+def del_volunteer(volunteerID):
+    v = db.get_or_404(Volunteer, volunteerID)
+    db.session.delete(v)
+    db.session.commit()
+    return jsonify({"messsage":"Successly removed entry with UUID " + str(volunteerID)}), 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
