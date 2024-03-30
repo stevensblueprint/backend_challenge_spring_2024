@@ -64,7 +64,7 @@ def list_volunteers():
         volunteer_list = volunteer_list[int(pagination_from):int(pagination_to)]
 
     def filterRule(entry):
-        if filtering in (entry["skills"])[1:-2].split(','): # Converts a JSON array in the format [x, y, z] to a Python array
+        if filtering in (entry["skills"])[1:-1].split(','): # Converts a JSON array in the format [x, y, z] to a Python array
             return True
         return False
     
@@ -80,7 +80,6 @@ def list_volunteers():
     if sorting == "dsc":
         volunteer_list = sorted(volunteer_list, sortHandler, True)
 
-    print(volunteer_list)
     return jsonify(volunteer_list)
 
 @app.route("/api/volunteers", methods=["POST"])
@@ -147,6 +146,13 @@ def del_volunteer(volunteerID):
     db.session.delete(v)
     db.session.commit()
     return jsonify({"messsage":"Successly removed entry with UUID " + str(volunteerID)}), 201
+
+@app.route("/api/volunteers/<uuid:volunteerID>/skills", methods=["GET"])
+def get_skills(volunteerID):
+    v = db.get_or_404(Volunteer, volunteerID)
+    skills = v.skills[1:-1].split(',')
+    return jsonify(skills), 201
+    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
