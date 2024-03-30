@@ -3,8 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 import uuid
 from datetime import datetime
-from sqlalchemy_serializer import SerializerMixin
-import json
+from operator import itemgetter
 
 class Base(DeclarativeBase):
     pass
@@ -22,7 +21,7 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-class Volunteer(db.Model, SerializerMixin):
+class Volunteer(db.Model):
     __tablename__ = "volunteers"
     volunteer_id = db.Column(db.UUID, primary_key=True)
     first_name = db.Column(db.String(255))
@@ -75,10 +74,10 @@ def list_volunteers():
         return entry["first_name"]
 
     if sorting == "asc":
-        volunteer_list = sorted(volunteer_list, sortHandler, False)
+        volunteer_list = sorted(volunteer_list, key=itemgetter("first_name"))
 
     if sorting == "dsc":
-        volunteer_list = sorted(volunteer_list, sortHandler, True)
+        volunteer_list = sorted(volunteer_list, key=itemgetter("first_name"), reverse=True)
 
     return jsonify(volunteer_list)
 
@@ -99,7 +98,6 @@ def new_volunteer():
                      date_joined=datetime.now(),
                      background_check=data["background_check"]
                      )
-
     db.session.add(newv)
     db.session.commit()
 
@@ -152,7 +150,6 @@ def get_skills(volunteerID):
     v = db.get_or_404(Volunteer, volunteerID)
     skills = v.skills[1:-1].split(',')
     return jsonify(skills), 201
-    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
