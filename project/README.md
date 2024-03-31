@@ -32,8 +32,8 @@ Type \q to quit after inputting the command.
 
 Optionally, if you want to utilize the event capabilities, you need to create a second table to handle that:
 	CREATE TABLE events (
-				event_id UUID,
-				events VARCHAR(255)
+				event_id VARCHAR(255),
+				volunteers VARCHAR(255)
 				);
 
 Modify line in the Config class in run.py:
