@@ -30,14 +30,15 @@ class Volunteer(db.Model):
     phone_number = db.Column(db.String(255))
     date_of_birth = db.Column(db.DateTime)
     address = db.Column(db.String(255))
-    skills = db.Column(db.String(255)) # Will be jsonified
+    skills = db.Column(db.String(255))
     availability = db.Column(db.String(255))
     date_joined = db.Column(db.DateTime)
     background_check = db.Column(db.Boolean)
 
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "OK"})
+class Events(db.Model):
+    __tablename__ = "events"
+    volunteer_id = db.Column(db.UUID, primary_key=True)
+    events = db.Column(db.String(255))
     
 @app.route("/api/volunteers", methods=["GET"])
 def list_volunteers():
@@ -173,6 +174,11 @@ def remove_skill(volunteerID, skillID):
         db.session.commit()
         return jsonify(skills), 201
     return jsonify({"error":"No skill found for voluneteer titled '" + str(skillID) + "'"}), 404
+
+@app.route("/api/volunteers/<uuid:volunteerID>/events", methods=["GET"])
+def get_events(volunteerID):
+    e = db.get_or_404(Events, volunteerID)
+    return e.events, 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
