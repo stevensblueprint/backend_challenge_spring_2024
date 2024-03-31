@@ -18,3 +18,8 @@ As a general recomendation, please comment your code, and stick to best practice
 2. Create a pull request in your own forked repository
 3. Submit the link to your pull pull-request
 
+==============================================================================================================
+
+## How to run
+1. Install dependencies by running: `npm i`
+2. Run application by running `npm run dev`

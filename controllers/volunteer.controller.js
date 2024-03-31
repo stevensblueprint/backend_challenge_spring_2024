@@ -1,5 +1,7 @@
 const Volunteer = require("../models/volunteer.model.js");
 
+
+//Get all volunteers
 const getAllVolunteers = async (req, res) => {
     try {
       const volunteers = await Volunteer.find({});
@@ -9,6 +11,7 @@ const getAllVolunteers = async (req, res) => {
     }
   };
 
+  //Add new volunteer
   const addVolunteer = async (req, res) => {
     try {
       const volunteer = await Volunteer.create(req.body);
@@ -19,6 +22,7 @@ const getAllVolunteers = async (req, res) => {
     }
   };
 
+  //Get one volunteer by ID
   const getOneVolunteer = async (req, res) => {
     try {
       res.status(200).json(await Volunteer.findById(req.params.volunteerId));
@@ -27,6 +31,7 @@ const getAllVolunteers = async (req, res) => {
     }
   };
 
+  //Update a volunteer by ID
   const updateVolunteer = async (req, res) => {
     try {
       const volunteer = await Volunteer.findByIdAndUpdate(req.params.volunteerId, req.body);
@@ -42,6 +47,7 @@ const getAllVolunteers = async (req, res) => {
     }
   };
 
+  //Delete a volunteer by ID
   const deleteVolunteer = async (req, res) => {
     try {
       const volunteer = await Volunteer.findByIdAndDelete(req.params.volunteerId);
@@ -56,6 +62,7 @@ const getAllVolunteers = async (req, res) => {
     }
   };
 
+  //Get volunteer's skills by ID
   const getSkills = async (req, res) => {
     try {
       res.status(200).json((await Volunteer.findById(req.params.volunteerId)).skills);
@@ -64,6 +71,7 @@ const getAllVolunteers = async (req, res) => {
     }
   };
 
+  //Update a volunteer's skills by ID
   const updateSkills = async (req, res) => {
     try {
       const updatedVolunteer = await Volunteer.findByIdAndUpdate(req.params.volunteerId,{$push: {skills: {$each: req.body.skills}}},{new: true});
@@ -78,6 +86,7 @@ const getAllVolunteers = async (req, res) => {
     }
   };
 
+  //Delete a specific skill from a volunteer by their ID
   const deleteSkill = async (req, res) => {
     try {
       const updatedVolunteer = await Volunteer.findByIdAndUpdate(req.params.volunteerId,{$pull: {skills: req.params.skillId}},{new: true});
@@ -92,6 +101,7 @@ const getAllVolunteers = async (req, res) => {
     }
   };
 
+  //Export all modules
   module.exports = {
     getAllVolunteers,
     addVolunteer,
