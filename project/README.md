@@ -11,8 +11,9 @@ Use the following command to find the IP address of the database (NOT TO BE CONF
 
 Use the following command to start the database client:
 	docker run -it --rm postgres psql -h <IP address of database> -U postgres
+Enter the password you set when prompted.
 
-Create the table using the following code:
+Create the primary table using the following code:
 	CREATE TABLE volunteers (
 				volunteer_id UUID,
 				first_name VARCHAR(255),
@@ -28,6 +29,12 @@ Create the table using the following code:
 				);
 Type \q to quit after inputting the command.
 
+Optionally, if you want to utilize the event capabilities, you need to create a second table to handle that:
+	CREATE TABLE events (
+				volunteer_id UUID,
+				events VARCHAR(255)
+				);
+
 Modify line in the Config class in run.py:
 	SQLALCHEMY_DATABASE_URI = "postgresql://postgres:<your password>@<IP address of database>"
 
@@ -38,4 +45,4 @@ Run the flask docker container:
 	docker run -p 5000:5000 --rm cmarotti-app
 
 Now, you can send queries to the database through the IP address and port directly (utilizing an application such as Postman) such as:
-	http://111.111.111.111:5000/api/volunteers/
+	http://<IP address of database>:5000/api/volunteers/
