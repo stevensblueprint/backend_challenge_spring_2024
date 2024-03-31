@@ -34,11 +34,12 @@ class Volunteer(db.Model):
     availability = db.Column(db.String(255))
     date_joined = db.Column(db.DateTime)
     background_check = db.Column(db.Boolean)
+    attended_events = db.Column(db.String(255))
 
 class Events(db.Model):
     __tablename__ = "events"
-    volunteer_id = db.Column(db.UUID, primary_key=True)
-    events = db.Column(db.String(255))
+    event_id = db.Column(db.String(255), primary_key=True)
+    volunteers = db.Column(db.String(255))
     
 @app.route("/api/volunteers", methods=["GET"])
 def list_volunteers():
@@ -57,7 +58,8 @@ def list_volunteers():
                        "skills":v.skills, 
                        "availability":v.availability, 
                        "date_joined":v.date_joined, 
-                       "background_check":v.background_check}
+                       "background_check":v.background_check,
+                       "attended_events":v.attended_events}
                       for v in volunteers]
 
     if pagination_from != None and pagination_to != None:
@@ -87,18 +89,20 @@ def new_volunteer():
     data = request.get_json()
     vid = uuid.uuid4()
 
-    newv = Volunteer(volunteer_id=vid,
-                     first_name=data["first_name"],
-                     last_name=data["last_name"],
-                     email=data["email"],
-                     phone_number=data["phone_number"],
-                     date_of_birth=datetime.strptime(data["date_of_birth"], "%Y-%m-%d"),
-                     address=data["address"],
-                     skills=data["skills"],
-                     availability="\"" + str(data["availability"]) +"\"",
-                     date_joined=datetime.now(),
-                     background_check=data["background_check"]
-                     )
+    newv = Volunteer(
+                    volunteer_id=vid,
+                    first_name=data["first_name"],
+                    last_name=data["last_name"],
+                    email=data["email"],
+                    phone_number=data["phone_number"],
+                    date_of_birth=datetime.strptime(data["date_of_birth"], "%Y-%m-%d"),
+                    address=data["address"],
+                    skills=data["skills"],
+                    availability=str(data["availability"]),
+                    date_joined=datetime.now(),
+                    background_check=data["background_check"],
+                    attended_events="[]"
+                    )
     db.session.add(newv)
     db.session.commit()
 
@@ -107,33 +111,39 @@ def new_volunteer():
 @app.route("/api/volunteers/<uuid:volunteerID>", methods=["GET"])
 def get_volunteer(volunteerID):
     v = db.get_or_404(Volunteer, volunteerID)
-    output = {"volunteer_id":v.volunteer_id, 
-                       "first_name":v.first_name, 
-                       "last_name":v.last_name, 
-                       "email":v.email, 
-                       "phone_number":v.phone_number, 
-                       "date_of_birth":v.date_of_birth, 
-                       "address":v.address, 
-                       "skills":v.skills, 
-                       "availability":v.availability, 
-                       "date_joined":v.date_joined, 
-                       "background_check":v.background_check}
+    output = {
+                        "volunteer_id":v.volunteer_id, 
+                        "first_name":v.first_name, 
+                        "last_name":v.last_name, 
+                        "email":v.email, 
+                        "phone_number":v.phone_number, 
+                        "date_of_birth":v.date_of_birth, 
+                        "address":v.address, 
+                        "skills":v.skills, 
+                        "availability":v.availability, 
+                        "date_joined":v.date_joined, 
+                        "background_check":v.background_check,
+                        "attended_events":v.attended_events
+            }
     return jsonify(output)
 
 @app.route("/api/volunteers/<uuid:volunteerID>", methods=["PUT"])
 def mod_volunteer(volunteerID):
     v = db.get_or_404(Volunteer, volunteerID)
     data = request.get_json()
-    modv = {"volunteer_id":v.volunteer_id, 
-                       "first_name":data["first_name"], 
-                       "last_name":data["last_name"], 
-                       "email":data["email"], 
-                       "phone_number":data["phone_number"], 
-                       "date_of_birth":data["date_of_birth"], 
-                       "address":data["address"], 
-                       "skills":data["skills"], 
-                       "availability":"\"" + str(data["availability"]) +"\"", 
-                       "background_check":data["background_check"]}
+    modv = {
+                        "volunteer_id":v.volunteer_id, 
+                        "first_name":data["first_name"], 
+                        "last_name":data["last_name"], 
+                        "email":data["email"], 
+                        "phone_number":data["phone_number"], 
+                        "date_of_birth":data["date_of_birth"], 
+                        "address":data["address"], 
+                        "skills":data["skills"], 
+                        "availability":str(data["availability"]), 
+                        "background_check":data["background_check"],
+                        "attended_events":v.attended_events
+            }
     for k in list(modv.keys()):
         # set the database entry at the key k to the value at the same key in the modified entry
         setattr(v, k, modv[k])
@@ -177,8 +187,8 @@ def remove_skill(volunteerID, skillID):
 
 @app.route("/api/volunteers/<uuid:volunteerID>/events", methods=["GET"])
 def get_events(volunteerID):
-    e = db.get_or_404(Events, volunteerID)
-    return e.events, 201
+    v = db.get_or_404(Volunteer, volunteerID)
+    return v.attended_events, 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
