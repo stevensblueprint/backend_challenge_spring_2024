@@ -4,6 +4,8 @@ from sqlalchemy.orm import DeclarativeBase
 import uuid
 from datetime import datetime
 from operator import itemgetter
+import json
+from sqlalchemy.dialects.postgresql import JSONB
 
 class Base(DeclarativeBase):
     pass
@@ -66,7 +68,7 @@ def list_volunteers():
         volunteer_list = volunteer_list[int(pagination_from):int(pagination_to)]
 
     def filterRule(entry):
-        if filtering in (entry["skills"])[1:-1].split(','): # Converts a JSON array in the format [x, y, z] to a Python array
+        if filtering in (entry["skills"])[1:-1].split(','): # Converts a JSON array in the format [a, b, ..., z] to a Python array
             return True
         return False
     
@@ -146,22 +148,25 @@ def mod_volunteer(volunteerID):
             }
     for k in list(modv.keys()):
         # set the database entry at the key k to the value at the same key in the modified entry
-        setattr(v, k, modv[k])
+        if k == "skills":
+            for i in range(0, len(modv[k])):
+                modv[k] = modv[k].replace('"', '')
+        v[k] = modv[k]
     db.session.commit()
-    return jsonify(modv), 201
+    return jsonify(modv)
 
 @app.route("/api/volunteers/<uuid:volunteerID>", methods=["DELETE"])
 def del_volunteer(volunteerID):
     v = db.get_or_404(Volunteer, volunteerID)
     db.session.delete(v)
     db.session.commit()
-    return jsonify({"messsage":"Successly removed entry with UUID " + str(volunteerID)}), 201
+    return jsonify({"messsage":"Successly removed entry with UUID " + str(volunteerID)})
 
 @app.route("/api/volunteers/<uuid:volunteerID>/skills", methods=["GET"])
 def get_skills(volunteerID):
     v = db.get_or_404(Volunteer, volunteerID)
     skills = v.skills[1:-1].split(',')
-    return jsonify(skills), 201
+    return jsonify(skills)
 
 @app.route("/api/volunteers/<uuid:volunteerID>/skills", methods=["POST"])
 def add_skill(volunteerID):
@@ -170,9 +175,11 @@ def add_skill(volunteerID):
     skills = v.skills[1:-1].split(',')
     for s in data:
         skills += [s]
-    setattr(v, "skills", skills)
+    for i in range(0, len(skills)):
+        skills[i] = skills[i].replace('"', '')
+    v.skills = skills
     db.session.commit()
-    return jsonify(skills), 201
+    return jsonify(skills)
 
 @app.route("/api/volunteers/<uuid:volunteerID>/skills/<string:skillID>", methods=["DELETE"])
 def remove_skill(volunteerID, skillID):
@@ -180,15 +187,40 @@ def remove_skill(volunteerID, skillID):
     skills = v.skills[1:-1].split(',')
     if skillID in skills:
         skills = skills[0:skills.index(skillID)] + skills[(skills.index(skillID) + 1):]
-        setattr(v, "skills", skills)
+        v.skills = skills
         db.session.commit()
-        return jsonify(skills), 201
+        return jsonify(skills)
     return jsonify({"error":"No skill found for voluneteer titled '" + str(skillID) + "'"}), 404
 
 @app.route("/api/volunteers/<uuid:volunteerID>/events", methods=["GET"])
 def get_events(volunteerID):
     v = db.get_or_404(Volunteer, volunteerID)
-    return v.attended_events, 201
+    return v.attended_events
+
+@app.route("/api/events/<string:eventID>/volunteers/<uuid:volunteerID>", methods=["POST"])
+def add_event(eventID, volunteerID):
+    v = db.get_or_404(Volunteer, volunteerID)
+    ev = db.session.query(Events).filter(Events.event_id==eventID).first() # There should only ever be one anyway
+    if ev == None:
+        new_ev = Events(
+                        event_id=eventID,
+                        volunteers="[]"
+                      )
+        ev = new_ev
+        db.session.add(new_ev)
+    v_attended_evs = v.attended_events[1:-1].split(',')
+    if v_attended_evs[0] == '':
+        v_attended_evs = []
+    v_attended_evs += [eventID]
+    for i in range(len(v_attended_evs)):
+        v_attended_evs[i] = v_attended_evs[i].replace('"', '')
+    v.attended_events = v_attended_evs
+    v_list = ev.volunteers[1:-1].split(',') + [volunteerID]
+    if v_list[0] == '':
+        v_list = []
+    ev.volunteers = v_list
+    db.session.commit()
+    return jsonify(v_attended_evs), 201
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
