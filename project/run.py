@@ -47,7 +47,7 @@ def list_volunteers():
     pagination_from = request.args.get("pagination-from")
     pagination_to = request.args.get("pagination-to")
     filtering = request.args.get("filter-by-skill")
-    sorting = request.args.get("sort")
+    sorting = request.args.get("sorted")
     volunteers = Volunteer.query.all()
 
     if volunteers == None:
@@ -80,9 +80,10 @@ def list_volunteers():
     def sortHandler(entry):
         return entry["first_name"]
 
+    print(sorting)
     if sorting == "asc":
         volunteer_list = sorted(volunteer_list, key=itemgetter("first_name"))
-
+        
     if sorting == "dsc":
         volunteer_list = sorted(volunteer_list, key=itemgetter("first_name"), reverse=True)
 
@@ -239,5 +240,6 @@ def del_volunteer_from_event(eventID, volunteerID):
         db.session.commit()
         return jsonify({"messsage":"Successly removed entry with UUID " + str(volunteerID)})
     return jsonify({"error":"Provided user does not have this event"}), 404
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
