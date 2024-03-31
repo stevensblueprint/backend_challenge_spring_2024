@@ -36,7 +36,6 @@ class Volunteer(db.Model):
     availability = db.Column(db.String(255))
     date_joined = db.Column(db.DateTime)
     background_check = db.Column(db.Boolean)
-    attended_events = db.Column(db.String(255))
 
 class Events(db.Model):
     __tablename__ = "events"
@@ -50,6 +49,10 @@ def list_volunteers():
     filtering = request.args.get("filter-by-skill")
     sorting = request.args.get("sort")
     volunteers = Volunteer.query.all()
+
+    if volunteers == None:
+        return jsonify({"error":"No entries found"}), 404
+    
     volunteer_list = [{"volunteer_id":v.volunteer_id, 
                        "first_name":v.first_name, 
                        "last_name":v.last_name, 
@@ -60,8 +63,7 @@ def list_volunteers():
                        "skills":v.skills, 
                        "availability":v.availability, 
                        "date_joined":v.date_joined, 
-                       "background_check":v.background_check,
-                       "attended_events":v.attended_events}
+                       "background_check":v.background_check}
                       for v in volunteers]
 
     if pagination_from != None and pagination_to != None:
@@ -103,7 +105,6 @@ def new_volunteer():
                     availability=str(data["availability"]),
                     date_joined=datetime.now(),
                     background_check=data["background_check"],
-                    attended_events="[]"
                     )
     db.session.add(newv)
     db.session.commit()
@@ -125,7 +126,6 @@ def get_volunteer(volunteerID):
                         "availability":v.availability, 
                         "date_joined":v.date_joined, 
                         "background_check":v.background_check,
-                        "attended_events":v.attended_events
             }
     return jsonify(output)
 
@@ -144,7 +144,6 @@ def mod_volunteer(volunteerID):
                         "skills":data["skills"], 
                         "availability":str(data["availability"]), 
                         "background_check":data["background_check"],
-                        "attended_events":v.attended_events
             }
     for k in list(modv.keys()):
         # set the database entry at the key k to the value at the same key in the modified entry
@@ -194,33 +193,51 @@ def remove_skill(volunteerID, skillID):
 
 @app.route("/api/volunteers/<uuid:volunteerID>/events", methods=["GET"])
 def get_events(volunteerID):
-    v = db.get_or_404(Volunteer, volunteerID)
-    return v.attended_events
+    evs = Events.query.all()
+    ev_list = [{"event_id":e.event_id,
+                "volunteers":e.volunteers}
+               for e in evs]
+    v = db.get_or_404(Volunteer, volunteerID) # Just to check whether the user is valid
+    output = []
+    for e in ev_list:
+        v_list = e["volunteers"][1:-1].split(',')
+        if str(volunteerID) in v_list:
+            output += [e["event_id"]]
+        
+    return jsonify(output)
 
 @app.route("/api/events/<string:eventID>/volunteers/<uuid:volunteerID>", methods=["POST"])
 def add_event(eventID, volunteerID):
-    v = db.get_or_404(Volunteer, volunteerID)
+    db.get_or_404(Volunteer, volunteerID) # Just to check that the ID is valid
     ev = db.session.query(Events).filter(Events.event_id==eventID).first() # There should only ever be one anyway
     if ev == None:
         new_ev = Events(
                         event_id=eventID,
-                        volunteers="[]"
+                        volunteers="[" + str(volunteerID) + "]"
                       )
-        ev = new_ev
         db.session.add(new_ev)
-    v_attended_evs = v.attended_events[1:-1].split(',')
-    if v_attended_evs[0] == '':
-        v_attended_evs = []
-    v_attended_evs += [eventID]
-    for i in range(len(v_attended_evs)):
-        v_attended_evs[i] = v_attended_evs[i].replace('"', '')
-    v.attended_events = v_attended_evs
-    v_list = ev.volunteers[1:-1].split(',') + [volunteerID]
+        db.session.commit()
+        return jsonify(new_ev.volunteers), 201
+    v_list = ev.volunteers
+    v_list = v_list[1:-1].split(',')
     if v_list[0] == '':
         v_list = []
-    ev.volunteers = v_list
-    db.session.commit()
-    return jsonify(v_attended_evs), 201
+    if not str(volunteerID) in v_list:
+        v_list += [str(volunteerID)]
+        ev.volunteers = v_list
+        db.session.commit()
+    return jsonify(v_list), 201
 
+@app.route("/api/events/<string:eventID>/volunteers/<uuid:volunteerID>", methods=["DELETE"])
+def del_volunteer_from_event(eventID, volunteerID):
+    db.get_or_404(Volunteer, volunteerID) # Just to check that the ID is valid
+    ev = db.get_or_404(Events, eventID)
+    v_list = ev.volunteers[1:-1].split(',')
+    if str(volunteerID) in v_list:
+        v_list = v_list[:v_list.index(str(volunteerID))] + v_list[(v_list.index(str(volunteerID)))+1:]
+        ev.volunteers = v_list
+        db.session.commit()
+        return jsonify({"messsage":"Successly removed entry with UUID " + str(volunteerID)})
+    return jsonify({"error":"Provided user does not have this event"}), 404
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
