@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
 
+
+//Function to validate email addresses
 const validateEmail = function(email){
     const val = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/; // Corrected regular expression
     return val.test(email);
 }
 
+//Scheme for the volunteers and provided attributes
 const VolunteerSchema = mongoose.mongoose.Schema(
     {
         first_name: {
@@ -76,4 +79,5 @@ const VolunteerSchema = mongoose.mongoose.Schema(
 
 const Volunteer = mongoose.model("Volunteer", VolunteerSchema);
 
+//Export
 module.exports = Volunteer;
