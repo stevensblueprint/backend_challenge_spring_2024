@@ -3,7 +3,7 @@ At any point in this readme, if you see something that looks <like this>, you do
 Start by defining your database:
 	docker run --name <server name> -e POSTGRES_PASSWORD=<your password> -d postgres
 
-Any time you want to start the database again, you use the following command: 
+Now, start the server using the following command:
 	docker start <server name>
 
 Use the following command to find the IP address of the database (NOT TO BE CONFUSED WITH THE GATEWAY):
@@ -25,8 +25,7 @@ Create the primary table using the following code:
 				skills VARCHAR(255),
 				availability VARCHAR(255),
 				date_joined DATE,
-				background_check BOOLEAN,
-				attended_events VARCHAR(255)
+				background_check BOOLEAN
 				);
 Type \q to quit after inputting the command.
 
