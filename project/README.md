@@ -25,13 +25,14 @@ Create the primary table using the following code:
 				skills VARCHAR(255),
 				availability VARCHAR(255),
 				date_joined DATE,
-				background_check BOOLEAN
+				background_check BOOLEAN,
+				attended_events VARCHAR(255)
 				);
 Type \q to quit after inputting the command.
 
 Optionally, if you want to utilize the event capabilities, you need to create a second table to handle that:
 	CREATE TABLE events (
-				volunteer_id UUID,
+				event_id UUID,
 				events VARCHAR(255)
 				);
 
