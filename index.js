@@ -1,48 +1,21 @@
 const express = require("express");
+const mongoose = require("mongoose");
+const Volunteer = require("./models/volunteer.model.js");
+const volunteerRoute = require('./routes/volunteer.route.js')
 const app = express();
 
-app.get("/api/volunteers", (req, res) => {
-  res.send("Implement");
-});
+//Middleware
+app.use(express.json());
 
-app.post("/api/volunteers", (req, res) => {
-  res.send("Implement");
-});
+//Routes
+app.use("/api/volunteers", volunteerRoute);
 
-app.get("/api/volunteers/:volunteerId", (req, res) => {
-  res.send("Implement");
-});
-
-app.put("/api/volunteers/:volunteerId", (req, res) => {
-  res.send("Implement");
-});
-
-app.delete("/api/volunteers/:volunteerId", (req, res) => {
-  res.send("Implement");
-});
-
-app.get("/api/volunteers/:volunteerId/skills", (req, res) => {
-  res.send("Implement");
-});
-
-app.post("/api/volunteers/:volunteerId/skills", (req, res) => {
-  res.send("Implement");
-});
-
-app.delete("/api/volunteers/:volunteerId/skills/:skillId", (req, res) => {
-  res.send("Implement");
-});
-
-app.get("/api/volunteers/:volunteerId/events", (req, res) => {
-  res.send("Implement");
-});
-
-app.post("/api/events/{eventId}/volunteers/:volunteerId", (req, res) => {
-  res.send("Implement");
-});
-
-app.delete("/api/events/{eventId}/volunteers/:volunteerId", (req, res) => {
-  res.send("Implement");
-});
-
-app.listen(3000, () => console.log("Server is running on port 3000"));
+//Database connection
+mongoose.connect("mongodb+srv://njvinny:fuN3JWwBpvQQxlDg@backenddb.mvdlpjt.mongodb.net/NodeAPI?retryWrites=true&w=majority&appName=BackendDB")
+  .then(() => {
+    console.log("Connected to database.");
+    app.listen(3000, () => console.log("Server is running on port 3000"));
+  })
+  .catch(() => {
+    console.log("Database connection failed.");
+  });
